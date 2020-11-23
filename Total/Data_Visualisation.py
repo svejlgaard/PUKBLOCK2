@@ -231,7 +231,7 @@ class Dataset():
                 new_data_for_tsne = new_data_for_tsne.loc[:, (new_data_for_tsne != 0).any(axis=0)]
                 print(new_data_for_tsne)
             print('TSNE-ing')
-            data_embedded = TSNE(n_components=2,n_jobs=-1).fit_transform(data_for_tsne)
+            data_embedded = TSNE(n_components=2,n_jobs=8).fit_transform(data_for_tsne)
 
             np.save(f'TSNE_{self.scaler}_{self.name}', data_embedded)
             self.tsne_data = data_embedded
@@ -273,7 +273,7 @@ class Dataset():
                 #data_cluster = OPTICS(n_jobs=-1).fit_predict(self.tsne_data)
                 data_cluster = SpectralClustering(n_clusters=clusters, 
                                                   random_state=random_state, 
-                                                  n_jobs=-1,
+                                                  n_jobs=8,
                                                   ).fit_predict(self.tsne_data)
                 plt.scatter(x,y,c=data_cluster,zorder=10,label='Clusters')
 
@@ -309,7 +309,7 @@ all_data.preprocess(standard = True)
 
 all_data.tsne(save=True, load=False, diff=False)
 
-all_data.tsne_plot(save=True, with_cluster=False)
+all_data.tsne_plot(save=True, with_cluster=True)
 
 # Preprocessing the data (not any data of string-type) via the quantile transformer
 
