@@ -1,0 +1,36 @@
+##########################
+HOW TO USE HPC KU
+##########################
+
+LOGIN:
+First type ssh fgj787@fend0x.hpc.ku.dk
+Then type Mone27@hpc.ku
+
+
+LOGIN FROM NEW IP:
+First type ssh fgj787@otp.hpc.ku.dk
+Then enter code from the FreeOTP app
+
+
+% ssh put-your-HPC-username-here@otp.hpc.ku.dk
+Password: 
+One-time password (OATH) for `put-your-HPC-username-here': 
+Last login: Fri Nov  1 15:22:12 2019 from somewhere.dk
+
+    --== Welcome to HPC/UCPH ==--
+
+Your current IP has been registered and will be added to the firewall
+within the next few minutes!
+
+You should be able to connect to a frontend for the next 3 days.
+
+
+HPC/UCPH Support
+
+
+Connection to otp.hpc.ku.dk closed.
+
+There is a few minutes delay, from authenticating to the service, before the temporal IP is known in the firewall
+
+LOGOUT:
+Type ext
