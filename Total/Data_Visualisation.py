@@ -265,9 +265,9 @@ class Dataset():
                 if len(np.unique(self.labels)) < 3:
                     clusters = len(np.unique(self.labels))
                 else:
-                    clusters = 3
+                    clusters = 6
                 #Have tried KMeans, SpectralClustering
-                self.name += 'SC'
+                #self.name += 'SC'
                 print(self.tsne_data.shape)
                 print('Clustering')
                 #data_cluster = OPTICS(n_jobs=-1).fit_predict(self.tsne_data)
@@ -275,7 +275,10 @@ class Dataset():
                                                   random_state=random_state, 
                                                   n_jobs=8,
                                                   ).fit_predict(self.tsne_data)
+                plt.figure('Clustering')
                 plt.scatter(x,y,c=data_cluster,zorder=10,label='Clusters')
+                plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
+
 
 
         
@@ -297,7 +300,7 @@ all_data.get_colors(filter=False)
 
 all_data.get_classes()
 
-for co in ['u', 'jw', 'hw', 'kw','W3','W4','i']:
+for co in ['u', 'jw', 'hw', 'kw','i']:
     all_data.remove_color(co)
 
 for cl in ['GALAXY']:
