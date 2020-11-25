@@ -198,7 +198,7 @@ class Dataset():
             self.color_frame = pd.DataFrame(quantile_transform(self.color_frame, copy=True, n_quantiles=n_quantiles),
                                             columns = self.color_frame.columns,
                                             )
-        return self.color_frame, self.labels
+        return self.color_frame, self.labels, self.scaler
 
 
     def tsne(self, save = True, load = False, diff = False):
@@ -288,10 +288,11 @@ class Dataset():
 
 
 class Combination():
-    def __init__(self, data_list, label_list):
+    def __init__(self, data_list, label_list, scaler):
         self.data_list = pd.concat(data_list)
         self.color_frame = self.data_list.reset_index(drop=True)
         self.labels = np.concatenate(label_list, axis=0)
+        self.scaler = scaler
 
         col_names = self.color_frame.columns.to_list()
         self.name = ''.join(col_names)
@@ -384,11 +385,11 @@ all_data.color_plot('j','k','g','z', save=False)
 
 quasar_data.color_plot('j','k','g','z', save=False)
 
-all_data_pre, all_classes = all_data.preprocess(standard = True, n_quantiles=1000) 
+all_data_pre, all_classes, scaler = all_data.preprocess(standard = True, n_quantiles=1000) 
 
-quasar_data_pre, quasar_classes = quasar_data.preprocess(standard = True, n_quantiles=100)
+quasar_data_pre, quasar_classes, _ = quasar_data.preprocess(standard = True, n_quantiles=100)
 
-combined_data = Combination([all_data_pre, quasar_data_pre], [all_classes, quasar_classes])
+combined_data = Combination([all_data_pre, quasar_data_pre], [all_classes, quasar_classes], scaler)
 
 combined_data.tsne(save=True, load=False)
 
