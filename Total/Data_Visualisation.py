@@ -18,11 +18,14 @@ time_signature = datetime.now().strftime("%m%d-%H%M")
 
 random_state = 27
 
+plt.style.use('seaborn')
+
 class Dataset():
-    def __init__(self, filename, filetype):
+    def __init__(self, filename, filetype, load = True):
         self.filename = filename
         self.filetype = filetype
-        self.dtable = Table.read(self.filename, format=self.filetype).to_pandas()
+        if load:
+            self.dtable = Table.read(self.filename, format=self.filetype).to_pandas()
 
     def get_colors(self, all=True, filter=True):
         
@@ -48,11 +51,14 @@ class Dataset():
                 col_names[n] += "w"
             col_data = self.dtable.loc[:,names[col_indexes]]
             
-            
 
             err_indexes = [n for n,name in enumerate(names) if name[0] == "e"]
             err_names = [name + "err" for name in col_names]
             err_data = self.dtable.loc[:,names[err_indexes]]
+
+
+            new_frame = col_data.rename(columns = dict(zip(col_data.columns, col_names)))
+            err_frame = err_data.rename(columns = dict(zip(err_data.columns, err_names)))
 
         elif self.filetype == 'ascii':
 
@@ -73,26 +79,33 @@ class Dataset():
             err_names = [name.replace("E","e") for name in err_names]
             err_data = data[:,err_indexes]
 
-        new_frame = col_data.rename(columns = dict(zip(col_data.columns, col_names)))
-        err_frame = err_data.rename(columns = dict(zip(err_data.columns, err_names)))
+            new_frame = pd.DataFrame(data=col_data, columns=col_names)
+            err_frame = pd.DataFrame(data=err_data, columns= err_names)
 
         self.name = ''.join(col_names)
+
+        self.name += f'{self.filetype}'
         
         if filter:
             filt = np.nonzero( (np.abs(err_frame['gerr'].to_numpy()) < 0.5) & 
                                 (np.abs(err_frame['rerr'].to_numpy()) < 0.1) & 
-                                (np.abs(err_frame['jerr'].to_numpy()) < 0.1) & 
-                                (np.abs(err_frame['kerr'].to_numpy()) < 0.1) &
-                                (np.abs(err_frame['uerr'].to_numpy()) < 0.5) &
-                                (np.abs(err_frame['ierr'].to_numpy()) < 0.5) &
-                                (np.abs(err_frame['zerr'].to_numpy()) < 0.5) &
-                                (np.abs(err_frame['yerr'].to_numpy()) < 0.5) &
-                                (np.abs(err_frame['herr'].to_numpy()) < 0.5) 
+                                (np.abs(err_frame['jerr'].to_numpy()) < 0.1) &
+                                (np.abs(new_frame['j'].to_numpy() != 0)) &
+                                (np.abs(new_frame['k'].to_numpy() != 0)) &
+                                (np.abs(new_frame['j'].to_numpy() < 1e5)) &
+                                (np.abs(new_frame['k'].to_numpy() < 1e5)) &
+                                (np.abs(err_frame['kerr'].to_numpy()) < 0.1) 
                                 )
             self.dtable = pd.DataFrame(data = self.dtable.loc[filt], columns = org_names)
+            self.dtable = self.dtable.reset_index(drop=True)
+            
             
             new_frame = pd.DataFrame(data = col_data[filt], columns = col_names)
+            new_frame = new_frame.reset_index(drop=True)
             err_frame = pd.DataFrame(data = err_data[filt], columns = err_names)
+            err_frame = err_frame.reset_index(drop=True)
+
+        
 
         
         self.color_frame = new_frame
@@ -101,7 +114,7 @@ class Dataset():
         return new_frame, err_frame
 
     def get_classes(self):
-        if filetype == 'fits':
+        if self.filetype == 'fits':
             labels = self.dtable["SpCl_s_gs_gsu"]
             labels = [str(n) for n in labels]
             labels = [n.replace('b','') for n in labels]
@@ -114,18 +127,22 @@ class Dataset():
             self.dtable["SpCl_s_gs_gsu"] = labels  
             self.name += '_for_' + ''.join(np.unique(labels))
 
-        elif filetype == 'ascii':
-            qso_label = self.dtable['qso']
+        if self.filetype == 'ascii':
 
-            self.qso_condition = qso_label == 1
-
-            bal_label = self.dtable['bal']
-
-            self.bal_condition = bal_label == 1
-
-            self.unknown_condition = qso_label > 1
+            self.labels = np.chararray(self.dtable['qso'].to_numpy().shape, itemsize=3, unicode=True)
+            qso_label = np.array(self.dtable['qso'].to_numpy())
+            bal_label = np.array(self.dtable['bal'].to_numpy(), dtype=int)
+            self.labels[qso_label == 1.0] = str('QSO')
+            self.labels[bal_label == 1] = 'BAL'
+            self.labels[(qso_label > 1.0) | (qso_label < 1.0)] = 'UNK'
+            self.labels = np.array(self.labels)
 
             self.name += '_for_' + 'qso' + 'bal' + 'unk'
+        
+        return self.labels
+
+
+
 
 
     def remove_color(self, color_x):
@@ -142,56 +159,32 @@ class Dataset():
 
     def remove_class(self, class_x):
 
-        if self.filetype == 'fits':
-            index_not_x = self.labels != class_x
-            self.labels = self.labels[index_not_x]
-            self.color_frame = self.color_frame.loc[index_not_x,:]
-            self.err_frame = self.err_frame.loc[index_not_x,:]
-            self.name = self.name.replace(f'{class_x}','')
-            print(f'Removed {class_x}')
-        
-
-        elif self.filetype == 'ascii':
-            print('NOT IMPLEMENTED!')
-            print(abe)
+        index_not_x = self.labels != class_x
+        self.labels = self.labels[index_not_x]
+        self.color_frame = self.color_frame.loc[index_not_x,:]
+        self.err_frame = self.err_frame.loc[index_not_x,:]
+        self.name = self.name.replace(f'{class_x}','')
+        print(f'Removed {class_x}')
+    
     
     def color_plot(self, color_x1, color_x2, color_y1, color_y2, save=False):
 
-        if self.filetype == 'fits':
-            x = self.color_frame[color_x1] - self.color_frame[color_x2]
+        x = self.color_frame[color_x1] - self.color_frame[color_x2]
 
-            y = self.color_frame[color_y1] - self.color_frame[color_y2]
+        y = self.color_frame[color_y1] - self.color_frame[color_y2]
 
-            colormap = ['r', 'g', 'b','y']
-            plt.figure(1)
-            for num, l in enumerate(np.unique(self.labels)):
-                plt.plot(x[self.labels == l],y[self.labels == l],'.',
-                        label=l, color=colormap[num], 
-                        zorder=len(np.unique(self.labels))+1-num,
-                        )
-            plt.xlabel(f'{color_x1}-{color_x2}')
-            plt.ylabel(f'{color_y1}-{color_y2}')
-            plt.legend()
-            
-
-        elif self.filetype == 'ascii':
-        
-            x = self.color_frame[color_x1].to_numpy() - self.color_frame[color_x2].to_numpy()
-            
-
-            y = self.color_frame[color_y1] - self.color_frame[color_y2]
-
-            colormap = ['r', 'g', 'b']
-            plt.figure(1)
-            plt.plot(x[self.qso_condition],y[self.qso_condition],'.', label='QSO', color=colormap[0])
-            plt.plot(x[self.bal_condition],y[self.bal_condition],'.',label= 'BAL', color=colormap[1])
-            plt.plot(x[self.unknown_condition], y[self.unknown_condition],'.', label='UNK', color=colormap[2])
-            plt.xlabel(f'{color_x1}-{color_x2}')
-            plt.ylabel(f'{color_y1}-{color_y2}')
-            plt.legend()
-
+        plt.figure(f'{self.filetype}_color')
+        for num, l in enumerate(np.unique(self.labels)):
+            plt.plot(x[self.labels == l],y[self.labels == l],'.',
+                    label=l, 
+                    zorder=len(np.unique(self.labels))+1-num,
+                    )
+        plt.xlabel(f'{color_x1}-{color_x2}')
+        plt.ylabel(f'{color_y1}-{color_y2}')
+        plt.legend()
         if save:
-            plt.savefig(f'plots/{color_x1}{color_x2}{color_y1}{color_y2}_{time_signature}.pdf')
+            plt.savefig(f'plots/{color_x1}{color_x2}{color_y1}{color_y2}_{time_signature}_{self.filetype}.pdf')
+
 
     
     def preprocess(self, standard = True, quantile = True, n_quantiles = 1000):
@@ -205,6 +198,7 @@ class Dataset():
             self.color_frame = pd.DataFrame(quantile_transform(self.color_frame, copy=True, n_quantiles=n_quantiles),
                                             columns = self.color_frame.columns,
                                             )
+        return self.color_frame
 
 
     def tsne(self, save = True, load = False, diff = False):
@@ -231,7 +225,9 @@ class Dataset():
                 new_data_for_tsne = new_data_for_tsne.loc[:, (new_data_for_tsne != 0).any(axis=0)]
                 print(new_data_for_tsne)
             print('TSNE-ing')
-            data_embedded = TSNE(n_components=2,n_jobs=8).fit_transform(data_for_tsne)
+
+            if self.filetype == 'fits':
+                data_embedded = TSNE(n_components=2,n_jobs=8).fit_transform(data_for_tsne)
 
             np.save(f'TSNE_{self.scaler}_{self.name}', data_embedded)
             self.tsne_data = data_embedded
@@ -247,20 +243,27 @@ class Dataset():
         plt.figure(2)
         x = self.tsne_data[:,0]
         y = self.tsne_data[:,1]
+
         if self.filetype == 'ascii':
-            plt.scatter(x[self.qso_condition],y[self.qso_condition], label='QSO', c='r')
-            plt.scatter(x[self.bal_condition],y[self.bal_condition], label='BAL', c='g')
-            plt.scatter(x[self.unknown_condition],y[self.unknown_condition], label='UNK', c='b')
+
+            plt.scatter(x[self.qso_condition],y[self.qso_condition], label='QSO')
+            plt.scatter(x[self.bal_condition],y[self.bal_condition], label='BAL')
+            plt.scatter(x[self.unknown_condition],y[self.unknown_condition], label='UNK')
+
+            if save:
+                plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}.pdf')
             
         elif self.filetype == 'fits':
-            colormap = ['r', 'g', 'b', 'y']
             for num, l in enumerate(np.unique(self.labels)):
                 plt.plot(x[self.labels == l],y[self.labels == l],'.', 
-                        label=l, color=colormap[num], 
+                        label=l, 
                         zorder=len(np.unique(self.labels))+1-num,
                         )
 
             
+
+            plt.legend()
+
             if with_cluster:
                 if len(np.unique(self.labels)) < 3:
                     clusters = len(np.unique(self.labels))
@@ -281,12 +284,72 @@ class Dataset():
 
 
 
-        
-        plt.legend()
+
+
+
+class Combination():
+    def __init__(self, data_list, label_list):
+        self.data_list = pd.concat(data_list)
+        self.color_frame = self.data_list.reset_index(drop=True)
+        self.labels = np.concatenate(label_list, axis=0)
+
+        col_names = self.color_frame.columns.to_list()
+        self.name = ''.join(col_names)
+        self.name += '_Combined'
+    
+    def tsne(self, save=True, load=False):
+        self.labels = self.labels[np.all(self.color_frame.notnull(),axis=1)]
+
         if save:
-            plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}.pdf')
+            data_for_tsne = self.color_frame.dropna()
+            print('TSNE-ing')
+
+            data_embedded = TSNE(n_components=2,n_jobs=8).fit_transform(data_for_tsne)
+
+            np.save(f'TSNE_{self.scaler}_{self.name}', data_embedded)
+            self.tsne_data = data_embedded
+
+        if load:
+            try:
+                self.tsne_data = np.load(f'TSNE_{self.scaler}_{self.name}.npy')
+            except:
+                print('No matching TSNE-file! Retry save=True')
+                print(abe)
 
 
+    def tsne_plot(self, save = True, with_cluster = True):
+        plt.figure('tsne_combination')
+        x = self.tsne_data[:,0]
+        y = self.tsne_data[:,1]
+            
+        for num, l in enumerate(np.unique(self.labels)):
+            plt.plot(x[self.labels == l],y[self.labels == l],'.', 
+                    label=l, 
+                    zorder=len(np.unique(self.labels))+1-num,
+                    )
+
+        plt.legend()
+        plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}.pdf')
+
+        if with_cluster:
+            if len(np.unique(self.labels)) < 3:
+                clusters = len(np.unique(self.labels))
+            else:
+                clusters = 3
+            #Have tried KMeans, SpectralClustering
+            #self.name += 'SC'
+            print(self.tsne_data.shape)
+            print('Clustering')
+            #data_cluster = OPTICS(n_jobs=-1).fit_predict(self.tsne_data)
+            data_cluster = SpectralClustering(n_clusters=clusters, 
+                                                random_state=random_state, 
+                                                n_jobs=8,
+                                                ).fit_predict(self.tsne_data)
+            plt.figure('Clustering')
+            plt.scatter(x,y,c=data_cluster,zorder=10,label='Clusters')
+            plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
+
+        
 
 
 # Reading the data and converting to a pandas data frame - works more smoothly with sklearn
@@ -296,23 +359,40 @@ filetype = 'fits'
 
 all_data = Dataset(filename,filetype)
 
+quasar_data = Dataset('MasterCatalogue.dat', 'ascii')
+
 all_data.get_colors(filter=False)
 
-all_data.get_classes()
+quasar_data.get_colors(filter=True)
+
+all_classes = all_data.get_classes()
+
+quasar_classes = quasar_data.get_classes()
 
 for co in ['u', 'jw', 'hw', 'kw','i']:
     all_data.remove_color(co)
+
+for co in ['u', 'i']:
+    quasar_data.remove_color(co)
+
 
 for cl in ['GALAXY']:
     all_data.remove_class(cl)
 
 all_data.color_plot('j','k','g','z', save=False)
 
-all_data.preprocess(standard = True)
+quasar_data.color_plot('j','k','g','z', save=False)
 
-all_data.tsne(save=True, load=False, diff=False)
+all_data_pre = all_data.preprocess(standard = True, n_quantiles=1000) 
 
-all_data.tsne_plot(save=True, with_cluster=True)
+quasar_data_pre = quasar_data.preprocess(standard = True, n_quantiles=100)
+
+
+combined_data = Combination([all_data_pre, quasar_data_pre], [all_classes, quasar_classes])
+
+combined_data.tsne(save=True, load=False)
+
+combined_data.tsne_plot(save=True, with_cluster=False)
 
 # Preprocessing the data (not any data of string-type) via the quantile transformer
 
