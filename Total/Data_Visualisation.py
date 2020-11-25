@@ -157,15 +157,27 @@ class Dataset():
         return self.color_frame, self.err_frame
 
 
-    def remove_class(self, class_x):
+    def remove_class(self, class_x, some=True):
+        if some:
+            index_x = np.where(self.labels == class_x)[0]
+            chosen = np.random.choice(index_x, size=int(len(index_x)/2))
+            self.labels = np.delete(self.labels, chosen)
+            self.color_frame = self.color_frame.reset_index(drop=True)
+            self.err_frame = self.err_frame.reset_index(drop=True)
+            self.color_frame = self.color_frame.drop(index=chosen)
+            self.err_frame = self.err_frame.drop(chosen)
+            self.color_frame = self.color_frame.reset_index(drop=True)
+            self.err_frame = self.err_frame.reset_index(drop=True)
+            self.name = self.name.replace(f'{class_x}',f'notall{class_x}')
+            print(f'Removed some {class_x}')
+        else:
+            index_not_x = self.labels != class_x
+            self.labels = self.labels[index_not_x]
+            self.color_frame = self.color_frame.loc[index_not_x,:]
+            self.err_frame = self.err_frame.loc[index_not_x,:]
+            self.name = self.name.replace(f'{class_x}','')
+            print(f'Removed {class_x}')
 
-        index_not_x = self.labels != class_x
-        self.labels = self.labels[index_not_x]
-        self.color_frame = self.color_frame.loc[index_not_x,:]
-        self.err_frame = self.err_frame.loc[index_not_x,:]
-        self.name = self.name.replace(f'{class_x}','')
-        print(f'Removed {class_x}')
-    
     
     def color_plot(self, color_x1, color_x2, color_y1, color_y2, save=False):
 
@@ -379,7 +391,9 @@ for co in ['u', 'i']:
 
 
 for cl in ['GALAXY']:
-    all_data.remove_class(cl)
+    all_data.remove_class(cl, some=False)
+
+all_data.remove_class('UNK', some=True)
 
 all_data.color_plot('j','k','g','z', save=False)
 
