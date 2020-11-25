@@ -393,7 +393,6 @@ for co in ['u', 'i']:
 for cl in ['GALAXY']:
     all_data.remove_class(cl, some=False)
 
-all_data.remove_class('UNK', some=True)
 
 all_data.color_plot('j','k','g','z', save=False)
 
