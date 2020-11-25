@@ -348,8 +348,7 @@ class Combination():
         if with_cluster:
             if len(np.unique(self.labels)) < 3:
                 clusters = len(np.unique(self.labels))
-            else:
-                clusters = 3
+            clusters = 11
             #Have tried KMeans, SpectralClustering
             #self.name += 'SC'
             print('Clustering')
@@ -359,7 +358,7 @@ class Combination():
                                                 n_jobs=8,
                                                 ).fit_predict(self.tsne_data)
             plt.figure('Clustering')
-            plt.scatter(x,y,c=data_cluster,zorder=10,label='Clusters')
+            plt.scatter(x,y,c=data_cluster)
             plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
 
         
@@ -406,7 +405,7 @@ combined_data = Combination([all_data_pre, quasar_data_pre], [all_classes, quasa
 
 combined_data.tsne(save=True, load=False)
 
-combined_data.tsne_plot(save=True, with_cluster=False)
+combined_data.tsne_plot(save=True, with_cluster=True)
 
 # Preprocessing the data (not any data of string-type) via the quantile transformer
 
