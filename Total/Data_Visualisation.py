@@ -198,7 +198,7 @@ class Dataset():
             self.color_frame = pd.DataFrame(quantile_transform(self.color_frame, copy=True, n_quantiles=n_quantiles),
                                             columns = self.color_frame.columns,
                                             )
-        return self.color_frame
+        return self.color_frame, self.labels
 
 
     def tsne(self, save = True, load = False, diff = False):
@@ -298,6 +298,7 @@ class Combination():
         self.name += '_Combined'
     
     def tsne(self, save=True, load=False):
+        print(self.color_frame.shape, self.labels.shape)
         self.labels = self.labels[np.all(self.color_frame.notnull(),axis=1)]
 
         if save:
@@ -338,7 +339,6 @@ class Combination():
                 clusters = 3
             #Have tried KMeans, SpectralClustering
             #self.name += 'SC'
-            print(self.tsne_data.shape)
             print('Clustering')
             #data_cluster = OPTICS(n_jobs=-1).fit_predict(self.tsne_data)
             data_cluster = SpectralClustering(n_clusters=clusters, 
@@ -365,9 +365,10 @@ all_data.get_colors(filter=False)
 
 quasar_data.get_colors(filter=True)
 
-all_classes = all_data.get_classes()
+all_data.get_classes()
 
-quasar_classes = quasar_data.get_classes()
+quasar_data.get_classes()
+
 
 for co in ['u', 'jw', 'hw', 'kw','i']:
     all_data.remove_color(co)
@@ -383,10 +384,9 @@ all_data.color_plot('j','k','g','z', save=False)
 
 quasar_data.color_plot('j','k','g','z', save=False)
 
-all_data_pre = all_data.preprocess(standard = True, n_quantiles=1000) 
+all_data_pre, all_classes = all_data.preprocess(standard = True, n_quantiles=1000) 
 
-quasar_data_pre = quasar_data.preprocess(standard = True, n_quantiles=100)
-
+quasar_data_pre, quasar_classes = quasar_data.preprocess(standard = True, n_quantiles=100)
 
 combined_data = Combination([all_data_pre, quasar_data_pre], [all_classes, quasar_classes])
 
