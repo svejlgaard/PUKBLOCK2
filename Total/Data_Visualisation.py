@@ -30,6 +30,7 @@ class Dataset():
     def get_colors(self, all=True, filter=True):
         
         org_names = self.dtable.columns.to_numpy()
+        
 
         if self.filetype == 'fits':
 
@@ -37,6 +38,8 @@ class Dataset():
 
             names = np.array([label for label in org_names if ("mag" in label)])
 
+            self.obj_names = np.array(self.dtable['Name_u_gsu'],dtype=str)
+           
 
             col_indexes = [n for n,name in enumerate(names) if name[0] != "e"]
             col_names = names[col_indexes]
@@ -63,7 +66,9 @@ class Dataset():
         elif self.filetype == 'ascii':
 
             org_data = self.dtable.to_numpy()
-
+            self.obj_names = self.dtable['name']
+            self.obj_names = np.array(self.obj_names)
+            
             if all:
                 data = org_data[:,6:-1]
                 names = org_names[6:-1]
@@ -97,6 +102,8 @@ class Dataset():
                                 (np.abs(err_frame['kerr'].to_numpy()) < 0.1) 
                                 )
             self.dtable = pd.DataFrame(data = self.dtable.loc[filt], columns = org_names)
+            self.obj_names = self.obj_names[filt]
+
             self.dtable = self.dtable.reset_index(drop=True)
             
             
@@ -106,10 +113,11 @@ class Dataset():
             err_frame = err_frame.reset_index(drop=True)
 
         
-
         
         self.color_frame = new_frame
         self.err_frame = err_frame
+
+        assert self.color_frame.shape[0] == self.obj_names.shape[0]
 
         return new_frame, err_frame
 
@@ -151,7 +159,10 @@ class Dataset():
 
         """
         self.color_frame = self.color_frame.drop(columns = color_x)
-        self.err_frame = self.err_frame.drop(columns = f'{color_x}err')
+        try:
+            self.err_frame = self.err_frame.drop(columns = f'{color_x}err')
+        except:
+            print(f'{color_x}err is not found in axis and hence not removed')
         self.name = self.name.replace(f'{color_x}','')
         print(f'Removed {color_x}')
         return self.color_frame, self.err_frame
@@ -162,20 +173,28 @@ class Dataset():
             index_x = np.where(self.labels == class_x)[0]
             chosen = np.random.choice(index_x, size=int(len(index_x)/2))
             self.labels = np.delete(self.labels, chosen)
+            self.obj_names = np.delete(self.obj_names, chosen)
+            
             self.color_frame = self.color_frame.reset_index(drop=True)
             self.err_frame = self.err_frame.reset_index(drop=True)
+
             self.color_frame = self.color_frame.drop(index=chosen)
-            self.err_frame = self.err_frame.drop(chosen)
+            self.err_frame = self.err_frame.drop(index=chosen)
+
             self.color_frame = self.color_frame.reset_index(drop=True)
             self.err_frame = self.err_frame.reset_index(drop=True)
+
             self.name = self.name.replace(f'{class_x}',f'notall{class_x}')
             print(f'Removed some {class_x}')
         else:
             index_not_x = self.labels != class_x
             self.labels = self.labels[index_not_x]
+            self.obj_names = self.obj_names[index_not_x]
             self.color_frame = self.color_frame.loc[index_not_x,:]
             self.err_frame = self.err_frame.loc[index_not_x,:]
             self.name = self.name.replace(f'{class_x}','')
+
+            assert self.color_frame.shape[0] == self.obj_names.shape[0]
             print(f'Removed {class_x}')
 
     
@@ -210,7 +229,7 @@ class Dataset():
             self.color_frame = pd.DataFrame(quantile_transform(self.color_frame, copy=True, n_quantiles=n_quantiles),
                                             columns = self.color_frame.columns,
                                             )
-        return self.color_frame, self.labels, self.scaler
+        return self.color_frame, self.labels, self.obj_names, self.scaler
 
 
     def tsne(self, save = True, load = False, diff = False):
@@ -235,7 +254,7 @@ class Dataset():
                     more_data_for_tsne = more_data_for_tsne.reset_index(drop=True)
                     new_data_for_tsne = pd.concat([new_data_for_tsne, more_data_for_tsne],axis=1)
                 new_data_for_tsne = new_data_for_tsne.loc[:, (new_data_for_tsne != 0).any(axis=0)]
-                print(new_data_for_tsne)
+            
             print('TSNE-ing')
 
             if self.filetype == 'fits':
@@ -283,7 +302,6 @@ class Dataset():
                     clusters = 6
                 #Have tried KMeans, SpectralClustering
                 #self.name += 'SC'
-                print(self.tsne_data.shape)
                 print('Clustering')
                 #data_cluster = OPTICS(n_jobs=-1).fit_predict(self.tsne_data)
                 data_cluster = SpectralClustering(n_clusters=clusters, 
@@ -300,22 +318,26 @@ class Dataset():
 
 
 class Combination():
-    def __init__(self, data_list, label_list, scaler):
+    def __init__(self, data_list, label_list, obj_names_list, scaler):
         self.data_list = pd.concat(data_list)
         self.color_frame = self.data_list.reset_index(drop=True)
         self.labels = np.concatenate(label_list, axis=0)
+        self.obj_names = np.concatenate(obj_names_list)
         self.scaler = scaler
+
+        assert self.color_frame.shape[0] == self.obj_names.shape[0]
 
         col_names = self.color_frame.columns.to_list()
         self.name = ''.join(col_names)
         self.name += '_Combined'
     
     def tsne(self, save=True, load=False):
-        print(self.color_frame.shape, self.labels.shape)
         self.labels = self.labels[np.all(self.color_frame.notnull(),axis=1)]
+        self.obj_names = self.obj_names[np.all(self.color_frame.notnull(),axis=1)]
+        self.color_frame = self.color_frame.dropna()
 
         if save:
-            data_for_tsne = self.color_frame.dropna()
+            data_for_tsne = self.color_frame.copy()
             print('TSNE-ing')
 
             data_embedded = TSNE(n_components=2,n_jobs=8).fit_transform(data_for_tsne)
@@ -327,7 +349,7 @@ class Combination():
             try:
                 self.tsne_data = np.load(f'TSNE_{self.scaler}_{self.name}.npy')
             except:
-                print('No matching TSNE-file! Retry save=True')
+                print('No matching TSNE-file! Retry with save=True')
                 print(abe)
 
 
@@ -343,7 +365,8 @@ class Combination():
                     )
 
         plt.legend()
-        plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}.pdf')
+        if save:
+            plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}.pdf')
 
         if with_cluster:
             if len(np.unique(self.labels)) < 3:
@@ -353,15 +376,49 @@ class Combination():
             #self.name += 'SC'
             print('Clustering')
             #data_cluster = OPTICS(n_jobs=-1).fit_predict(self.tsne_data)
-            data_cluster = SpectralClustering(n_clusters=clusters, 
+            self.data_cluster = SpectralClustering(n_clusters=clusters, 
                                                 random_state=random_state, 
                                                 n_jobs=8,
                                                 ).fit_predict(self.tsne_data)
             plt.figure('Clustering')
-            plt.scatter(x,y,c=data_cluster)
-            plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
+            plt.scatter(x,y,c=self.data_cluster)
+            if save:
+                np.save(f'Clustering_{self.scaler}_{self.name}', self.data_cluster)
+                plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
 
+
+    def get_objects(self, save = True, load = True, testing = True):
+
+        if load:
+            self.data_cluster = np.load(f'Clustering_{self.scaler}_{self.name}.npy')
+
+
+        if testing:
+            self.data_cluster = np.ones_like(self.obj_names)
+            self.data_cluster[::2] = 2
         
+
+        clustered_dict = {}
+
+        for cluster in np.unique(self.data_cluster):
+            final_data = self.color_frame[self.data_cluster == cluster]
+            final_data = final_data.reset_index(drop=True)
+            final_data = final_data.to_numpy()
+            final_names = self.obj_names[self.data_cluster == cluster]
+
+            clustered_dict.update({f'Cluster_{cluster}': [final_data, 
+                                                         self.obj_names[self.data_cluster == cluster]]})
+            
+            cluster_frame = pd.DataFrame(data = final_data,
+                                         columns = self.color_frame.columns.to_list())
+
+            cluster_frame.insert(0, 'Name', pd.Series(final_names), True)
+            
+            cluster_frame.to_csv(f'cluster_{cluster}.csv')
+
+        self.clustered_dict = clustered_dict
+
+
 
 
 # Reading the data and converting to a pandas data frame - works more smoothly with sklearn
@@ -382,10 +439,10 @@ all_data.get_classes()
 quasar_data.get_classes()
 
 
-for co in ['u', 'jw', 'hw', 'kw','i']:
+for co in ['u', 'jw', 'hw', 'kw','i', 'W3', 'W4']:
     all_data.remove_color(co)
 
-for co in ['u', 'i']:
+for co in ['u', 'i', 'W3', 'W4']:
     quasar_data.remove_color(co)
 
 
@@ -397,15 +454,21 @@ all_data.color_plot('j','k','g','z', save=False)
 
 quasar_data.color_plot('j','k','g','z', save=False)
 
-all_data_pre, all_classes, scaler = all_data.preprocess(standard = True, n_quantiles=1000) 
+all_data_pre, all_classes, all_obj_names, scaler = all_data.preprocess(standard = True, n_quantiles=1000) 
 
-quasar_data_pre, quasar_classes, _ = quasar_data.preprocess(standard = True, n_quantiles=100)
+quasar_data_pre, quasar_classes, quasar_obj_names, _ = quasar_data.preprocess(standard = True, n_quantiles=100)
 
-combined_data = Combination([all_data_pre, quasar_data_pre], [all_classes, quasar_classes], scaler)
+combined_data = Combination([all_data_pre, quasar_data_pre], 
+                            [all_classes, quasar_classes], 
+                            [all_obj_names, quasar_obj_names], 
+                            scaler,
+                            )
 
 combined_data.tsne(save=True, load=False)
 
 combined_data.tsne_plot(save=True, with_cluster=True)
+
+combined_data.get_objects(save=True, load=True, testing=False)
 
 # Preprocessing the data (not any data of string-type) via the quantile transformer
 
