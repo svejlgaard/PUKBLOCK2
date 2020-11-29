@@ -92,7 +92,8 @@ class Dataset():
         self.name += f'{self.filetype}'
         
         if filter:
-            filt = np.nonzero( (np.abs(err_frame['gerr'].to_numpy()) < 0.5) & 
+            if self.filetype == 'ascii':
+                filt = np.nonzero( (np.abs(err_frame['gerr'].to_numpy()) < 0.5) & 
                                 (np.abs(err_frame['rerr'].to_numpy()) < 0.1) & 
                                 (np.abs(err_frame['jerr'].to_numpy()) < 0.1) &
                                 (np.abs(new_frame['j'].to_numpy() != 0)) &
@@ -101,19 +102,34 @@ class Dataset():
                                 (np.abs(new_frame['k'].to_numpy() < 1e5)) &
                                 (np.abs(err_frame['kerr'].to_numpy()) < 0.1) 
                                 )
+            else:
+            #    print(len(np.where(err_frame['W3err'] > 1.0)[0]))
+                filt = np.where( (err_frame['W3err'] < 1.0) & 
+                        (err_frame['W4err'] < 1.0)
+                        )
+            #    filt = np.where(np.isnan(err_frame['W3err']))
+                #filt = np.nonzero( (np.abs(err_frame['W3err']) < 1.0) &
+                #                 (np.abs(err_frame['W4err'].to_numpy()) < 1.0)
+                #                 )
+            #    print(len(filt[0]), len(err_frame))
+            #    print(abe)
+            
             self.dtable = pd.DataFrame(data = self.dtable.loc[filt], columns = org_names)
+            
             self.obj_names = self.obj_names[filt]
 
             self.dtable = self.dtable.reset_index(drop=True)
+    
+            if type(col_data) == type(np.ones(1)):
+                new_frame = pd.DataFrame(data = col_data[filt], columns = col_names)
+                err_frame = pd.DataFrame(data = err_data[filt], columns = err_names)
+            else:
+                new_frame = pd.DataFrame(data = col_data.loc[filt], columns = col_names)
+                err_frame = pd.DataFrame(data = err_data.loc[filt], columns = err_names)
             
-            
-            new_frame = pd.DataFrame(data = col_data[filt], columns = col_names)
             new_frame = new_frame.reset_index(drop=True)
-            err_frame = pd.DataFrame(data = err_data[filt], columns = err_names)
             err_frame = err_frame.reset_index(drop=True)
 
-        
-        
         self.color_frame = new_frame
         self.err_frame = err_frame
 
@@ -335,7 +351,7 @@ class Combination():
         self.labels = self.labels[np.all(self.color_frame.notnull(),axis=1)]
         self.obj_names = self.obj_names[np.all(self.color_frame.notnull(),axis=1)]
         self.color_frame = self.color_frame.dropna()
-
+       
         if save:
             data_for_tsne = self.color_frame.copy()
             print('TSNE-ing')
@@ -439,10 +455,10 @@ all_data.get_classes()
 quasar_data.get_classes()
 
 
-for co in ['u', 'jw', 'hw', 'kw','i', 'W3', 'W4']:
+for co in ['u', 'jw', 'hw', 'kw','i', 'W4']:
     all_data.remove_color(co)
 
-for co in ['u', 'i', 'W3', 'W4']:
+for co in ['u', 'i', 'W4']:
     quasar_data.remove_color(co)
 
 
@@ -470,25 +486,3 @@ combined_data.tsne_plot(save=True, with_cluster=True)
 
 combined_data.get_objects(save=True, load=True, testing=False)
 
-# Preprocessing the data (not any data of string-type) via the quantile transformer
-
-
-
-
-#data_embedded = np.load('TSNE_Quantile.npy')
-
-#data_pred = KMeans(n_clusters=3, random_state=random_state).fit_predict(data_embedded)
-
-
-
-
-
-
-
-#print(np.unique(data_table.dtypes))
-
-#print(data_table.loc[:, data_table.dtypes == np.any(np.unique(data_table.dtypes))])
-
-#print(data_table.loc[:, (data_table.dtypes == np.float64) |  (data_table.dtypes == np.float64) |(data_table.dtypes == np.int64)])
-
-#data_table = quantile_transform(data_table.loc[:, data_table.dtypes == np.any(np.unique(data_table.dtypes))], copy=True)
