@@ -455,10 +455,10 @@ all_data.get_classes()
 quasar_data.get_classes()
 
 
-for co in ['u', 'jw', 'hw', 'kw','i', 'W4','W3']:
+for co in ['u', 'jw', 'hw', 'kw','i', 'W4']:
     all_data.remove_color(co)
 
-for co in ['u', 'i', 'W4','W3']:
+for co in ['u', 'i', 'W4']:
     quasar_data.remove_color(co)
 
 
