@@ -387,7 +387,7 @@ class Combination():
         if with_cluster:
             if len(np.unique(self.labels)) < 3:
                 clusters = len(np.unique(self.labels))
-            clusters = 11
+            clusters = int(input('What is the expected number of clusters? '))
             #Have tried KMeans, SpectralClustering
             #self.name += 'SC'
             print('Clustering')
@@ -455,10 +455,10 @@ all_data.get_classes()
 quasar_data.get_classes()
 
 
-for co in ['u', 'jw', 'hw', 'kw','i', 'W4']:
+for co in ['u', 'jw', 'hw', 'kw','i', 'W4','W3']:
     all_data.remove_color(co)
 
-for co in ['u', 'i', 'W4']:
+for co in ['u', 'i', 'W4','W3']:
     quasar_data.remove_color(co)
 
 
