@@ -385,9 +385,9 @@ class Combination():
             plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}.pdf')
 
         if with_cluster:
-            if len(np.unique(self.labels)) < 3:
-                clusters = len(np.unique(self.labels))
-            clusters = int(input('What is the expected number of clusters? '))
+            #if len(np.unique(self.labels)) < 3:
+            #    clusters = len(np.unique(self.labels))
+            clusters = 12
             #Have tried KMeans, SpectralClustering
             #self.name += 'SC'
             print('Clustering')
