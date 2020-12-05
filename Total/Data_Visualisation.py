@@ -346,6 +346,13 @@ class Combination():
         col_names = self.color_frame.columns.to_list()
         self.name = ''.join(col_names)
         self.name += '_Combined'
+
+    def get_classnames(self, save=True):
+        name_dataframe = pd.DataFrame(data=[self.obj_names, self.labels])
+        name_dataframe = name_dataframe.transpose()
+        name_dataframe.columns = ['Name', 'Label']
+        if save:
+            name_dataframe.to_csv('NameFrame.txt', header=1, index=None, sep=' ', mode='a')
     
     def tsne(self, save=True, load=False):
         self.labels = self.labels[np.all(self.color_frame.notnull(),axis=1)]
@@ -474,13 +481,17 @@ all_data_pre, all_classes, all_obj_names, scaler = all_data.preprocess(standard 
 
 quasar_data_pre, quasar_classes, quasar_obj_names, _ = quasar_data.preprocess(standard = True, n_quantiles=100)
 
+
+
 combined_data = Combination([all_data_pre, quasar_data_pre], 
                             [all_classes, quasar_classes], 
                             [all_obj_names, quasar_obj_names], 
                             scaler,
                             )
 
-combined_data.tsne(save=True, load=False)
+combined_data.get_classnames(save=True)
+v 
+combined_data.tsne(save=False, load=True)
 
 combined_data.tsne_plot(save=True, with_cluster=True)
 
