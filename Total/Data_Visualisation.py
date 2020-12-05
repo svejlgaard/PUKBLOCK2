@@ -490,7 +490,7 @@ combined_data = Combination([all_data_pre, quasar_data_pre],
                             )
 
 combined_data.get_classnames(save=True)
-v 
+ 
 combined_data.tsne(save=False, load=True)
 
 combined_data.tsne_plot(save=True, with_cluster=True)
