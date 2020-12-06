@@ -351,6 +351,7 @@ class Combination():
         name_dataframe = pd.DataFrame(data=[self.obj_names, self.labels])
         name_dataframe = name_dataframe.transpose()
         name_dataframe.columns = ['Name', 'Label']
+        self.name_dataframe = name_dataframe
         if save:
             name_dataframe.to_csv('NameFrame.txt', header=1, index=None, sep=' ', mode='a')
     
@@ -451,7 +452,7 @@ filetype = 'fits'
 
 all_data = Dataset(filename,filetype)
 
-quasar_data = Dataset('MasterCatalogue.dat', 'ascii')
+quasar_data = Dataset('MasterCatalogue_old.dat', 'ascii')
 
 all_data.get_colors(filter=False)
 
@@ -469,8 +470,8 @@ for co in ['u', 'i', 'W4']:
     quasar_data.remove_color(co)
 
 
-for cl in ['GALAXY']:
-    all_data.remove_class(cl, some=False)
+#for cl in ['GALAXY']:
+#    all_data.remove_class(cl, some=False)
 
 
 all_data.color_plot('j','k','g','z', save=False)
@@ -490,8 +491,8 @@ combined_data = Combination([all_data_pre, quasar_data_pre],
                             )
 
 combined_data.get_classnames(save=True)
- 
-combined_data.tsne(save=False, load=True)
+
+combined_data.tsne(save=True, load=False)
 
 combined_data.tsne_plot(save=True, with_cluster=True)
 
