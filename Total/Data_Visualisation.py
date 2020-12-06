@@ -452,7 +452,7 @@ filetype = 'fits'
 
 all_data = Dataset(filename,filetype)
 
-quasar_data = Dataset('MasterCatalogue_old.dat', 'ascii')
+quasar_data = Dataset('MasterCatalogue.dat', 'ascii')
 
 all_data.get_colors(filter=False)
 
