@@ -10,6 +10,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, quantile_transform
 from datetime import datetime
 from sklearn.cluster import KMeans, SpectralClustering, OPTICS
+from sklearn.model_selection import StratifiedShuffleSplit
 
 # Sets the directory to the current directory
 os.chdir(sys.path[0])
@@ -34,18 +35,18 @@ class Dataset():
 
         if self.filetype == 'fits':
 
-            #| (label == "SpCl_s_gs_gsu")
-
-            names = np.array([label for label in org_names if ("mag" in label)])
+            names = np.array([label for label in org_names if ("mag" in label) | ("photG_g_gs_gsu" in label) | ("e_pmdec_g_gs_gsu" in label)])
 
             self.obj_names = np.array(self.dtable['Name_u_gsu'],dtype=str)
            
-
+            
             col_indexes = [n for n,name in enumerate(names) if name[0] != "e"]
             col_names = names[col_indexes]
             col_names = [name.replace("mag_s_gs_gsu","") for name in col_names]
+            col_names = [name.replace("phot","") for name in col_names]
             col_names = [name.replace("mag_u_gsu","") for name in col_names]
             col_names = [name.replace("mag_w","") for name in col_names]
+            col_names = [name.replace("_g_gs_gsu","") for name in col_names]
             col_names = [name.replace("Y","y") for name in col_names]
             col_names = [name.replace("J","j") for name in col_names]
             col_names = [name.replace("H","h") for name in col_names]
@@ -103,9 +104,7 @@ class Dataset():
                                 (np.abs(err_frame['kerr'].to_numpy()) < 0.1) 
                                 )
             else:
-            #    print(len(np.where(err_frame['W3err'] > 1.0)[0]))
-                filt = np.where( (err_frame['W3err'] < 1.0) & 
-                        (err_frame['W4err'] < 1.0)
+                filt = np.where( (new_frame['G'] < 20)
                         )
             #    filt = np.where(np.isnan(err_frame['W3err']))
                 #filt = np.nonzero( (np.abs(err_frame['W3err']) < 1.0) &
@@ -124,8 +123,10 @@ class Dataset():
                 new_frame = pd.DataFrame(data = col_data[filt], columns = col_names)
                 err_frame = pd.DataFrame(data = err_data[filt], columns = err_names)
             else:
-                new_frame = pd.DataFrame(data = col_data.loc[filt], columns = col_names)
-                err_frame = pd.DataFrame(data = err_data.loc[filt], columns = err_names)
+                
+                new_frame = pd.DataFrame(data = col_data.loc[filt].values, columns = col_names)
+                err_frame = pd.DataFrame(data = err_data.loc[filt].values, columns = err_names)
+                
             
             new_frame = new_frame.reset_index(drop=True)
             err_frame = err_frame.reset_index(drop=True)
@@ -335,7 +336,7 @@ class Dataset():
 
 class Combination():
     def __init__(self, data_list, label_list, obj_names_list, scaler):
-        self.data_list = pd.concat(data_list)
+        self.data_list = pd.concat(data_list, sort=True)
         self.color_frame = self.data_list.reset_index(drop=True)
         self.labels = np.concatenate(label_list, axis=0)
         self.obj_names = np.concatenate(obj_names_list)
@@ -355,16 +356,16 @@ class Combination():
         if save:
             name_dataframe.to_csv('NameFrame.txt', header=1, index=None, sep=' ', mode='a')
     
-    def tsne(self, save=True, load=False):
+    def tsne(self, perplexity, save=True, load=False):
         self.labels = self.labels[np.all(self.color_frame.notnull(),axis=1)]
         self.obj_names = self.obj_names[np.all(self.color_frame.notnull(),axis=1)]
         self.color_frame = self.color_frame.dropna()
-       
+        self.perplexity = perplexity
         if save:
             data_for_tsne = self.color_frame.copy()
             print('TSNE-ing')
 
-            data_embedded = TSNE(n_components=2,n_jobs=8).fit_transform(data_for_tsne)
+            data_embedded = TSNE(n_components=2,n_jobs=8, perplexity=perplexity).fit_transform(data_for_tsne)
 
             np.save(f'TSNE_{self.scaler}_{self.name}', data_embedded)
             self.tsne_data = data_embedded
@@ -377,8 +378,8 @@ class Combination():
                 print(abe)
 
 
-    def tsne_plot(self, save = True, with_cluster = True):
-        plt.figure('tsne_combination')
+    def tsne_plot(self, splits, cross = True, save = True, with_cluster = True):
+        plt.figure(f'tsne_combination_{self.perplexity}')
         x = self.tsne_data[:,0]
         y = self.tsne_data[:,1]
             
@@ -390,20 +391,23 @@ class Combination():
 
         plt.legend()
         if save:
-            plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}.pdf')
+            plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_p{self.perplexity}.pdf')
 
         if with_cluster:
-            #if len(np.unique(self.labels)) < 3:
-            #    clusters = len(np.unique(self.labels))
-            clusters = 12
-            #Have tried KMeans, SpectralClustering
-            #self.name += 'SC'
+            clusters = 6
             print('Clustering')
-            #data_cluster = OPTICS(n_jobs=-1).fit_predict(self.tsne_data)
-            self.data_cluster = SpectralClustering(n_clusters=clusters, 
-                                                random_state=random_state, 
-                                                n_jobs=8,
-                                                ).fit_predict(self.tsne_data)
+            #if cross:
+            #    sss = StratifiedShuffleSplit(n_splits=splits, test_size=0.5, random_state=0)
+            #    for train_index, test_index in sss.split(self.tsne_data, self.labels):
+            #        data_train, data_test = self.tsne_data[train_index], self.tsne_data[test_index]
+            #        labels_train, labels_test = self.labels[train_index], self.labels[test_index]
+            SC = SpectralClustering(n_clusters=clusters, 
+                                    random_state=random_state, 
+                                    n_jobs=8,
+                                    )
+            self.data_cluster = SC.fit_predict(self.tsne_data)
+
+
             plt.figure('Clustering')
             plt.scatter(x,y,c=self.data_cluster)
             if save:
@@ -454,7 +458,7 @@ all_data = Dataset(filename,filetype)
 
 quasar_data = Dataset('MasterCatalogue.dat', 'ascii')
 
-all_data.get_colors(filter=False)
+all_data.get_colors(filter=True)
 
 quasar_data.get_colors(filter=True)
 
@@ -463,16 +467,11 @@ all_data.get_classes()
 quasar_data.get_classes()
 
 
-for co in ['u', 'jw', 'hw', 'kw','i', 'W4']:
+for co in ['u', 'jw', 'hw', 'kw','i', 'W4', 'G', 'W3']:
     all_data.remove_color(co)
 
-for co in ['u', 'i', 'W4']:
+for co in ['u', 'i', 'W4', 'W3']:
     quasar_data.remove_color(co)
-
-
-#for cl in ['GALAXY']:
-#    all_data.remove_class(cl, some=False)
-
 
 all_data.color_plot('j','k','g','z', save=False)
 
@@ -492,9 +491,12 @@ combined_data = Combination([all_data_pre, quasar_data_pre],
 
 combined_data.get_classnames(save=True)
 
-combined_data.tsne(save=True, load=False)
+perp_list = [50, 75, 100]
+split = 5
 
-combined_data.tsne_plot(save=True, with_cluster=True)
+for p in perp_list:
+    combined_data.tsne(p,save=True, load=False)
+    combined_data.tsne_plot(split, save=True, with_cluster=False)
 
 combined_data.get_objects(save=True, load=True, testing=False)
 
