@@ -367,7 +367,7 @@ class Combination():
             data_for_tsne = self.color_frame.copy()
             print('TSNE-ing')
 
-            data_embedded = TSNE(n_components=2,n_jobs=8, perplexity=perplexity).fit_transform(data_for_tsne)
+            data_embedded = TSNE(n_components=2,n_jobs=8, perplexity=self.perplexity).fit_transform(data_for_tsne)
 
             np.save(f'TSNE_{self.scaler}_{self.name}', data_embedded)
             self.tsne_data = data_embedded
@@ -413,7 +413,7 @@ class Combination():
             plt.figure('Clustering')
             plt.scatter(x,y,c=self.data_cluster)
             if save:
-                np.save(f'Clustering_{self.scaler}_{self.name}', self.data_cluster)
+                np.save(f'Clustering_{self.scaler}_{self.name}_p{self.perplexity}', self.data_cluster)
                 plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
 
 
