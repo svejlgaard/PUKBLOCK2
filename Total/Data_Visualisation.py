@@ -101,10 +101,12 @@ class Dataset():
                                 (np.abs(new_frame['k'].to_numpy() != 0)) &
                                 (np.abs(new_frame['j'].to_numpy() < 1e5)) &
                                 (np.abs(new_frame['k'].to_numpy() < 1e5)) &
-                                (np.abs(err_frame['kerr'].to_numpy()) < 0.1) 
+                                (np.abs(err_frame['kerr'].to_numpy()) < 0.1) &
+                                (np.abs(new_frame['r'].to_numpy() < 19))
                                 )
             else:
-                filt = np.where( (new_frame['G'] < 20)
+                filt = np.where( (new_frame['G'] < 20) &
+                                (new_frame['r'] < 19)
                         )
             #    filt = np.where(np.isnan(err_frame['W3err']))
                 #filt = np.nonzero( (np.abs(err_frame['W3err']) < 1.0) &
