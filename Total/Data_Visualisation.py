@@ -22,9 +22,10 @@ random_state = 27
 plt.style.use('seaborn')
 
 class Dataset():
-    def __init__(self, filename, filetype, load = True):
+    def __init__(self, filename, filetype, magnitude, load = True):
         self.filename = filename
         self.filetype = filetype
+        self.magnitude = magnitude
         if load:
             self.dtable = Table.read(self.filename, format=self.filetype).to_pandas()
 
@@ -91,6 +92,8 @@ class Dataset():
         self.name = ''.join(col_names)
 
         self.name += f'{self.filetype}'
+
+        self.name += f'{self.magnitude}'
         
         if filter:
             if self.filetype == 'ascii':
@@ -105,7 +108,7 @@ class Dataset():
                                 (np.abs(new_frame['r'].to_numpy() < 19))
                                 )
             else:
-                filt = np.where( (new_frame['G'] < 20) &
+                filt = np.where( (new_frame['G'] < self.magnitude) &
                                 (new_frame['r'] < 19)
                         )
             #    filt = np.where(np.isnan(err_frame['W3err']))
@@ -153,6 +156,7 @@ class Dataset():
             self.labels = np.array(labels)
             self.dtable["SpCl_s_gs_gsu"] = labels  
             self.name += '_for_' + ''.join(np.unique(labels))
+            
 
         if self.filetype == 'ascii':
 
@@ -363,6 +367,7 @@ class Combination():
         self.obj_names = self.obj_names[np.all(self.color_frame.notnull(),axis=1)]
         self.color_frame = self.color_frame.dropna()
         self.perplexity = perplexity
+        self.name += f'_p{self.perplexity}'
         if save:
             data_for_tsne = self.color_frame.copy()
             print('TSNE-ing')
@@ -417,7 +422,8 @@ class Combination():
                 plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
 
 
-    def get_objects(self, save = True, load = True, testing = True):
+    def get_objects(self, magnitude, save = True, load = True, testing = True):
+        self.magnitude = magnitude
 
         if load:
             self.data_cluster = np.load(f'Clustering_{self.scaler}_{self.name}_p{self.perplexity}.npy')
@@ -444,21 +450,23 @@ class Combination():
 
             cluster_frame.insert(0, 'Name', pd.Series(final_names), True)
             
-            cluster_frame.to_csv(f'cluster_{cluster}_p{self.perplexity}.csv')
+            cluster_frame.to_csv(f'cluster_{cluster}_p{self.perplexity}_G{self.magnitude}.csv')
 
         self.clustered_dict = clustered_dict
 
 
 
 
+M = 20
+
 # Reading the data and converting to a pandas data frame - works more smoothly with sklearn
 filename = 'GaiaSDSSUKIDSSAllWISE.fits'
 
 filetype = 'fits'
 
-all_data = Dataset(filename,filetype)
+all_data = Dataset(filename,filetype, magnitude=M)
 
-quasar_data = Dataset('MasterCatalogue.dat', 'ascii')
+quasar_data = Dataset('MasterCatalogue.dat', 'ascii', magnitude=M)
 
 all_data.get_colors(filter=True)
 
@@ -474,6 +482,8 @@ for co in ['u', 'jw', 'hw', 'kw','i', 'W4', 'G', 'W3']:
 
 for co in ['u', 'i', 'W4', 'W3']:
     quasar_data.remove_color(co)
+
+quasar_data.remove_class('UNK', some=False)
 
 all_data.color_plot('j','k','g','z', save=False)
 
@@ -500,5 +510,5 @@ for p in perp_list:
     combined_data.tsne(p,save=True, load=False)
     combined_data.tsne_plot(split, save=True, with_cluster=True)
 
-combined_data.get_objects(save=True, load=True, testing=False)
+combined_data.get_objects(magnitude=M, save=True, load=True, testing=False)
 
