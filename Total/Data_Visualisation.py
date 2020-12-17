@@ -369,12 +369,12 @@ class Combination():
 
             data_embedded = TSNE(n_components=2,n_jobs=8, perplexity=self.perplexity).fit_transform(data_for_tsne)
 
-            np.save(f'TSNE_{self.scaler}_{self.name}', data_embedded)
+            np.save(f'TSNE_{self.scaler}_{self.name}_p{self.perplexity}', data_embedded)
             self.tsne_data = data_embedded
 
         if load:
             try:
-                self.tsne_data = np.load(f'TSNE_{self.scaler}_{self.name}.npy')
+                self.tsne_data = np.load(f'TSNE_{self.scaler}_{self.name}_p{self.perplexity}.npy')
             except:
                 print('No matching TSNE-file! Retry with save=True')
                 print(abe)
@@ -420,7 +420,7 @@ class Combination():
     def get_objects(self, save = True, load = True, testing = True):
 
         if load:
-            self.data_cluster = np.load(f'Clustering_{self.scaler}_{self.name}.npy')
+            self.data_cluster = np.load(f'Clustering_{self.scaler}_{self.name}_p{self.perplexity}.npy')
 
 
         if testing:
@@ -444,7 +444,7 @@ class Combination():
 
             cluster_frame.insert(0, 'Name', pd.Series(final_names), True)
             
-            cluster_frame.to_csv(f'cluster_{cluster}.csv')
+            cluster_frame.to_csv(f'cluster_{cluster}_p{self.perplexity}.csv')
 
         self.clustered_dict = clustered_dict
 
@@ -493,7 +493,7 @@ combined_data = Combination([all_data_pre, quasar_data_pre],
 
 combined_data.get_classnames(save=True)
 
-perp_list = [50, 75, 100]
+perp_list = [50]
 split = 5
 
 for p in perp_list:
