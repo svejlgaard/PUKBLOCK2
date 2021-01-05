@@ -398,10 +398,10 @@ class Combination():
 
         plt.legend()
         if save:
-            plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_p{self.perplexity}.pdf')
+            plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_G{self.magnitude}.pdf')
 
         if with_cluster:
-            clusters = 6
+            clusters = int(input('Number of clusters: '))
             print('Clustering')
             #if cross:
             #    sss = StratifiedShuffleSplit(n_splits=splits, test_size=0.5, random_state=0)
