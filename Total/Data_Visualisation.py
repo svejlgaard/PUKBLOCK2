@@ -341,12 +341,13 @@ class Dataset():
 
 
 class Combination():
-    def __init__(self, data_list, label_list, obj_names_list, scaler):
+    def __init__(self, magnitude, data_list, label_list, obj_names_list, scaler):
         self.data_list = pd.concat(data_list, sort=True)
         self.color_frame = self.data_list.reset_index(drop=True)
         self.labels = np.concatenate(label_list, axis=0)
         self.obj_names = np.concatenate(obj_names_list)
         self.scaler = scaler
+        self.magnitude = magnitude
 
         assert self.color_frame.shape[0] == self.obj_names.shape[0]
 
@@ -422,8 +423,7 @@ class Combination():
                 plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
 
 
-    def get_objects(self, magnitude, save = True, load = True, testing = True):
-        self.magnitude = magnitude
+    def get_objects(self, save = True, load = True, testing = True):
 
         if load:
             self.data_cluster = np.load(f'Clustering_{self.scaler}_{self.name}_p{self.perplexity}.npy')
@@ -450,7 +450,7 @@ class Combination():
 
             cluster_frame.insert(0, 'Name', pd.Series(final_names), True)
             
-            cluster_frame.to_csv(f'cluster_{cluster}_p{self.perplexity}_G{magnitude}.csv')
+            cluster_frame.to_csv(f'cluster_{cluster}_p{self.perplexity}_G{self.magnitude}.csv')
 
         self.clustered_dict = clustered_dict
 
@@ -495,7 +495,7 @@ quasar_data_pre, quasar_classes, quasar_obj_names, _ = quasar_data.preprocess(st
 
 
 
-combined_data = Combination([all_data_pre, quasar_data_pre], 
+combined_data = Combination(M,[all_data_pre, quasar_data_pre], 
                             [all_classes, quasar_classes], 
                             [all_obj_names, quasar_obj_names], 
                             scaler,
@@ -510,5 +510,5 @@ for p in perp_list:
     combined_data.tsne(p,save=True, load=False)
     combined_data.tsne_plot(split, save=True, with_cluster=True)
 
-combined_data.get_objects(magnitude=M, save=True, load=True, testing=False)
+combined_data.get_objects(save=True, load=True, testing=False)
 
