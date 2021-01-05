@@ -450,7 +450,7 @@ class Combination():
 
             cluster_frame.insert(0, 'Name', pd.Series(final_names), True)
             
-            cluster_frame.to_csv(f'cluster_{cluster}_p{self.perplexity}_G{self.magnitude}.csv')
+            cluster_frame.to_csv(f'cluster_{cluster}_p{self.perplexity}_G{magnitude}.csv')
 
         self.clustered_dict = clustered_dict
 
