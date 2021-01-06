@@ -349,6 +349,8 @@ class Combination():
         self.scaler = scaler
         self.magnitude = magnitude
 
+        
+
         assert self.color_frame.shape[0] == self.obj_names.shape[0]
 
         col_names = self.color_frame.columns.to_list()
@@ -361,7 +363,7 @@ class Combination():
         name_dataframe.columns = ['Name', 'Label']
         self.name_dataframe = name_dataframe
         if save:
-            name_dataframe.to_csv('NameFrame.txt', header=1, index=None, sep=' ', mode='a')
+            name_dataframe.to_csv('NameFrame.txt', header=1, index=None, sep=' ')
     
     def tsne(self, perplexity, save=True, load=False):
         self.labels = self.labels[np.all(self.color_frame.notnull(),axis=1)]
