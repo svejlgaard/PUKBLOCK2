@@ -402,6 +402,7 @@ class Combination():
         plt.legend()
         if save:
             plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_G{self.magnitude}.pdf')
+            print(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_G{self.magnitude}.pdf')
 
         if with_cluster:
             clusters = int(input('Number of clusters: '))
