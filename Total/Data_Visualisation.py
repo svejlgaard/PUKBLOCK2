@@ -32,6 +32,10 @@ class Dataset():
     def get_colors(self, all=True, filter=True):
         
         org_names = self.dtable.columns.to_numpy()
+
+        print(org_names)
+
+        print(abe)
         
 
         if self.filetype == 'fits':
@@ -459,7 +463,7 @@ class Combination():
 
 
 
-M = 19
+M = 20
 
 # Reading the data and converting to a pandas data frame - works more smoothly with sklearn
 filename = 'GaiaSDSSUKIDSSAllWISE.fits'
