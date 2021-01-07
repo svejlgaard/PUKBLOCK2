@@ -460,7 +460,7 @@ class Combination():
 
 
 
-M = 20
+M = 19
 
 # Reading the data and converting to a pandas data frame - works more smoothly with sklearn
 filename = 'GaiaSDSSUKIDSSAllWISE.fits'
@@ -506,7 +506,7 @@ combined_data = Combination(M,[all_data_pre, quasar_data_pre],
 
 combined_data.get_classnames(save=True)
 
-perp_list = [10, 25, 50, 100]
+perp_list = [50]
 split = 5
 
 for p in perp_list:
