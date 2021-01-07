@@ -32,10 +32,6 @@ class Dataset():
     def get_colors(self, all=True, filter=True):
         
         org_names = self.dtable.columns.to_numpy()
-
-        print(org_names)
-
-        print(abe)
         
 
         if self.filetype == 'fits':
