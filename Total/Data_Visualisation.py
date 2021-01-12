@@ -371,7 +371,7 @@ class Combination():
         self.color_frame = self.color_frame.dropna()
         self.perplexity = perplexity
         self.name += f'_p{self.perplexity}'
-        
+
         if save:
             data_for_tsne = self.color_frame.copy()
             print('TSNE-ing')
@@ -406,7 +406,7 @@ class Combination():
             print(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_G{self.magnitude}.pdf')
 
         if with_cluster:
-            clusters = int(input('Number of clusters: '))
+            #clusters = int(input('Number of clusters: '))
             #clusters = 2
             print('Clustering')
             #if cross:
@@ -414,7 +414,8 @@ class Combination():
             #    for train_index, test_index in sss.split(self.tsne_data, self.labels):
             #        data_train, data_test = self.tsne_data[train_index], self.tsne_data[test_index]
             #        labels_train, labels_test = self.labels[train_index], self.labels[test_index]
-            AC = AgglomerativeClustering(n_clusters=clusters)
+            #AC = AgglomerativeClustering(n_clusters=clusters)
+            AC = AgglomerativeClustering(distance_threshold=1, compute_full_tree=True)
             self.data_cluster = AC.fit_predict(self.tsne_data)
 
 
