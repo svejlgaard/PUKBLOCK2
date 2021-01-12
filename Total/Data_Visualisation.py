@@ -9,7 +9,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, quantile_transform
 from datetime import datetime
-from sklearn.cluster import KMeans, SpectralClustering, OPTICS
+from sklearn.cluster import KMeans, SpectralClustering, OPTICS, AgglomerativeClustering
 from sklearn.model_selection import StratifiedShuffleSplit
 
 # Sets the directory to the current directory
@@ -413,18 +413,19 @@ class Combination():
             #    for train_index, test_index in sss.split(self.tsne_data, self.labels):
             #        data_train, data_test = self.tsne_data[train_index], self.tsne_data[test_index]
             #        labels_train, labels_test = self.labels[train_index], self.labels[test_index]
-            KM = KMeans(n_clusters=clusters, n_init=100, max_iter=1000,
+            AC = AgglomerativeClustering(n_clusters=clusters,
                                     random_state=random_state, 
-                                    n_jobs=8,
+                                    n_jobs=10,
                                     )
-            self.data_cluster = KM.fit_predict(self.tsne_data)
+            self.data_cluster = AC.fit_predict(self.tsne_data)
 
 
             plt.figure('Clustering')
             plt.scatter(x,y,c=self.data_cluster)
             if save:
                 np.save(f'Clustering_{self.scaler}_{self.name}_p{self.perplexity}', self.data_cluster)
-                plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_Clustering.pdf')
+                print(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_G{self.magnitude}_Clustering.pdf')
+                plt.savefig(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_G{self.magnitude}_Clustering.pdf')
 
 
     def get_objects(self, save = True, load = True, testing = True):
@@ -453,7 +454,7 @@ class Combination():
                                          columns = self.color_frame.columns.to_list())
 
             cluster_frame.insert(0, 'Name', pd.Series(final_names), True)
-            
+            print(f'cluster_{cluster}_p{self.perplexity}_G{self.magnitude}.csv')
             cluster_frame.to_csv(f'cluster_{cluster}_p{self.perplexity}_G{self.magnitude}.csv')
 
         self.clustered_dict = clustered_dict
