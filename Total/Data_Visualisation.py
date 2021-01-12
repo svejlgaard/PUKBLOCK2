@@ -406,8 +406,8 @@ class Combination():
             print(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_G{self.magnitude}.pdf')
 
         if with_cluster:
-            clusters = int(input('Number of clusters: '))
-            #clusters = 2
+            #clusters = int(input('Number of clusters: '))
+            clusters = 2
             #print('Clustering')
             #if cross:
             #    sss = StratifiedShuffleSplit(n_splits=splits, test_size=0.5, random_state=0)
@@ -462,7 +462,7 @@ class Combination():
 
 
 
-M = 18
+M = 19
 
 # Reading the data and converting to a pandas data frame - works more smoothly with sklearn
 filename = 'GaiaSDSSUKIDSSAllWISE.fits'
@@ -508,7 +508,7 @@ combined_data = Combination(M,[all_data_pre, quasar_data_pre],
 
 combined_data.get_classnames(save=True)
 
-perp_list = [100]
+perp_list = [50, 90, 100, 150]
 split = 5
 
 for p in perp_list:
