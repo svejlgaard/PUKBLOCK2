@@ -420,7 +420,7 @@ class Combination():
             self.data_cluster = AC.fit_predict(self.tsne_data)
 
 
-            plt.figure('Clustering')
+            plt.figure(f'ClusteringP{self.perplexity}')
             plt.scatter(x,y,c=self.data_cluster)
             if save:
                 np.save(f'Clustering_{self.scaler}_{self.name}_p{self.perplexity}', self.data_cluster)
