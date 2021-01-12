@@ -462,7 +462,7 @@ class Combination():
 
 
 
-M = 18
+M = 19
 
 # Reading the data and converting to a pandas data frame - works more smoothly with sklearn
 filename = 'GaiaSDSSUKIDSSAllWISE.fits'
