@@ -413,11 +413,11 @@ class Combination():
             #    for train_index, test_index in sss.split(self.tsne_data, self.labels):
             #        data_train, data_test = self.tsne_data[train_index], self.tsne_data[test_index]
             #        labels_train, labels_test = self.labels[train_index], self.labels[test_index]
-            SC = SpectralClustering(n_clusters=clusters, 
+            KM = KMeans(n_clusters=clusters, 
                                     random_state=random_state, 
                                     n_jobs=8,
                                     )
-            self.data_cluster = SC.fit_predict(self.tsne_data)
+            self.data_cluster = KM.fit_predict(self.tsne_data)
 
 
             plt.figure('Clustering')
