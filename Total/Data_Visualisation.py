@@ -414,7 +414,6 @@ class Combination():
             #        data_train, data_test = self.tsne_data[train_index], self.tsne_data[test_index]
             #        labels_train, labels_test = self.labels[train_index], self.labels[test_index]
             AC = AgglomerativeClustering(n_clusters=clusters,
-                                    random_state=random_state, 
                                     n_jobs=10,
                                     )
             self.data_cluster = AC.fit_predict(self.tsne_data)
