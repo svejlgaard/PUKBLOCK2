@@ -377,7 +377,7 @@ class Combination():
 
             data_embedded = TSNE(n_components=2,n_jobs=8, perplexity=self.perplexity).fit_transform(data_for_tsne)
 
-            np.save(f'TSNE_{self.scaler}_{self.name}_p{self.perplexity}', data_embedded)
+            np.save(f'TSNE_{time_signature}_{self.scaler}_{self.name}_p{self.perplexity}', data_embedded)
             self.tsne_data = data_embedded
 
         if load:
@@ -413,7 +413,7 @@ class Combination():
             #    for train_index, test_index in sss.split(self.tsne_data, self.labels):
             #        data_train, data_test = self.tsne_data[train_index], self.tsne_data[test_index]
             #        labels_train, labels_test = self.labels[train_index], self.labels[test_index]
-            KM = KMeans(n_clusters=clusters, 
+            KM = KMeans(n_clusters=clusters, n_init=100, max_iter=1000,
                                     random_state=random_state, 
                                     n_jobs=8,
                                     )
