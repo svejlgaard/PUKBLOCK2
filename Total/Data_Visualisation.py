@@ -500,18 +500,16 @@ quasar_data_pre, quasar_classes, quasar_obj_names, _ = quasar_data.preprocess(st
 
 
 
-combined_data = Combination(M,[all_data_pre, quasar_data_pre], 
-                            [all_classes, quasar_classes], 
-                            [all_obj_names, quasar_obj_names], 
-                            scaler,
-                            )
-
-combined_data.get_classnames(save=True)
-
 perp_list = [50, 90, 100, 150]
 split = 5
 
 for p in perp_list:
+    combined_data = Combination(M,[all_data_pre, quasar_data_pre], 
+                            [all_classes, quasar_classes], 
+                            [all_obj_names, quasar_obj_names], 
+                            scaler,
+                            )
+    combined_data.get_classnames(save=True)
     combined_data.tsne(p,save=True, load=False)
     combined_data.tsne_plot(split, save=True, with_cluster=True)
     combined_data.get_objects(save=True, load=True, testing=False)
