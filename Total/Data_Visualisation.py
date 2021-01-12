@@ -371,6 +371,7 @@ class Combination():
         self.color_frame = self.color_frame.dropna()
         self.perplexity = perplexity
         self.name += f'_p{self.perplexity}'
+        
         if save:
             data_for_tsne = self.color_frame.copy()
             print('TSNE-ing')
@@ -382,7 +383,7 @@ class Combination():
 
         if load:
             try:
-                self.tsne_data = np.load(f'TSNE_{self.scaler}_{self.name}_p{self.perplexity}.npy')
+                self.tsne_data = np.load('TSNE_0112-1553_SSQuantile_W1W2ghjkryz_Combined_p50_p50.npy')
             except:
                 print('No matching TSNE-file! Retry with save=True')
                 print(abe)
@@ -509,7 +510,7 @@ perp_list = [50]
 split = 5
 
 for p in perp_list:
-    combined_data.tsne(p,save=True, load=False)
+    combined_data.tsne(p,save=False, load=True)
     combined_data.tsne_plot(split, save=True, with_cluster=True)
 
 combined_data.get_objects(save=True, load=True, testing=False)
