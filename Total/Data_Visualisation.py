@@ -413,9 +413,7 @@ class Combination():
             #    for train_index, test_index in sss.split(self.tsne_data, self.labels):
             #        data_train, data_test = self.tsne_data[train_index], self.tsne_data[test_index]
             #        labels_train, labels_test = self.labels[train_index], self.labels[test_index]
-            AC = AgglomerativeClustering(n_clusters=clusters,
-                                    n_jobs=10,
-                                    )
+            AC = AgglomerativeClustering(n_clusters=clusters)
             self.data_cluster = AC.fit_predict(self.tsne_data)
 
 
