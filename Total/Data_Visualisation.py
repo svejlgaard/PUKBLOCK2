@@ -508,7 +508,7 @@ combined_data = Combination(M,[all_data_pre, quasar_data_pre],
 
 combined_data.get_classnames(save=True)
 
-perp_list = [50]
+perp_list = [75]
 split = 5
 
 for p in perp_list:
