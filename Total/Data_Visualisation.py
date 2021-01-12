@@ -508,11 +508,11 @@ combined_data = Combination(M,[all_data_pre, quasar_data_pre],
 
 combined_data.get_classnames(save=True)
 
-perp_list = [75]
+perp_list = [90]
 split = 5
 
 for p in perp_list:
-    combined_data.tsne(p,save=False, load=True)
+    combined_data.tsne(p,save=True, load=False)
     combined_data.tsne_plot(split, save=True, with_cluster=True)
 
 combined_data.get_objects(save=True, load=True, testing=False)
