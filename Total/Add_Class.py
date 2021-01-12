@@ -110,7 +110,7 @@ def addclass(clname):
 
     example = clname
 
-    allclass = pd.read_csv('NameFrame_old.txt', sep=' ')
+    allclass = pd.read_csv('NameFrame.txt', sep=' ')
 
     allnames = allclass['Name'].to_numpy(dtype=str)
     alllabels = allclass['Label'].to_numpy(dtype=str)
