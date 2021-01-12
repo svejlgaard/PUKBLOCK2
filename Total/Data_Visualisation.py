@@ -406,9 +406,9 @@ class Combination():
             print(f'plots/TSNE_{time_signature}_{self.scaler}_{self.name}_G{self.magnitude}.pdf')
 
         if with_cluster:
-            #clusters = int(input('Number of clusters: '))
+            clusters = int(input('Number of clusters: '))
             #clusters = 2
-            print('Clustering')
+            #print('Clustering')
             #if cross:
             #    sss = StratifiedShuffleSplit(n_splits=splits, test_size=0.5, random_state=0)
             #    for train_index, test_index in sss.split(self.tsne_data, self.labels):
@@ -512,7 +512,7 @@ perp_list = [75]
 split = 5
 
 for p in perp_list:
-    combined_data.tsne(p,save=False, load=True)
+    combined_data.tsne(p,save=True, load=False)
     combined_data.tsne_plot(split, save=True, with_cluster=True)
 
 combined_data.get_objects(save=True, load=True, testing=False)
