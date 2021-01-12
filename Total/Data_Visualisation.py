@@ -514,6 +514,5 @@ split = 5
 for p in perp_list:
     combined_data.tsne(p,save=True, load=False)
     combined_data.tsne_plot(split, save=True, with_cluster=True)
-
-combined_data.get_objects(save=True, load=True, testing=False)
+    combined_data.get_objects(save=True, load=True, testing=False)
 
