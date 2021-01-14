@@ -97,6 +97,16 @@ class Dataset():
         
         if filter:
             if self.filetype == 'ascii':
+                #filt = np.nonzero( (np.abs(err_frame['gerr'].to_numpy()) < 0.5) & 
+                #                (np.abs(err_frame['rerr'].to_numpy()) < 0.1) & 
+                #                (np.abs(err_frame['jerr'].to_numpy()) < 0.1) &
+                #                (np.abs(new_frame['j'].to_numpy() != 0)) &
+                #                (np.abs(new_frame['k'].to_numpy() != 0)) &
+                #                (np.abs(new_frame['j'].to_numpy() < 1e5)) &
+                #                (np.abs(new_frame['k'].to_numpy() < 1e5)) &
+                #               (np.abs(err_frame['kerr'].to_numpy()) < 0.1) &
+                #                (np.abs(new_frame['r'].to_numpy() < 19))
+                #                )
                 filt = np.nonzero( (np.abs(err_frame['gerr'].to_numpy()) < 0.5) & 
                                 (np.abs(err_frame['rerr'].to_numpy()) < 0.1) & 
                                 (np.abs(err_frame['jerr'].to_numpy()) < 0.1) &
@@ -104,13 +114,9 @@ class Dataset():
                                 (np.abs(new_frame['k'].to_numpy() != 0)) &
                                 (np.abs(new_frame['j'].to_numpy() < 1e5)) &
                                 (np.abs(new_frame['k'].to_numpy() < 1e5)) &
-                                (np.abs(err_frame['kerr'].to_numpy()) < 0.1) &
-                                (np.abs(new_frame['r'].to_numpy() < 19))
-                                )
+                                (np.abs(err_frame['kerr'].to_numpy()) < 0.1))
             else:
-                filt = np.where( (new_frame['G'] < self.magnitude) &
-                                (new_frame['r'] < 19)
-                        )
+                filt = np.where( (new_frame['G'] < self.magnitude))
             #    filt = np.where(np.isnan(err_frame['W3err']))
                 #filt = np.nonzero( (np.abs(err_frame['W3err']) < 1.0) &
                 #                 (np.abs(err_frame['W4err'].to_numpy()) < 1.0)
@@ -462,7 +468,7 @@ class Combination():
 
 
 
-M = 19
+M = 20
 
 # Reading the data and converting to a pandas data frame - works more smoothly with sklearn
 filename = 'GaiaSDSSUKIDSSAllWISE.fits'
@@ -500,7 +506,7 @@ quasar_data_pre, quasar_classes, quasar_obj_names, _ = quasar_data.preprocess(st
 
 
 
-perp_list = [150]
+perp_list = [90]
 split = 5
 
 for p in perp_list:
