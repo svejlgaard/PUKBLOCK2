@@ -18,20 +18,7 @@ from PIL import Image
 from pytesseract import image_to_string
 import tempfile
 import astropy.units as u
-
-# # Coordinates of HD 1 from SIMBAD
-# hd1 = "00 05 08.83239 +67 50 24.0135"
-
-# print("Coordinates of HD 1 (SIMBAD): ", hd1)
-
-# # Obtain decimal representation
-# ra, dec = pyasl.coordsSexaToDeg(hd1)
-# print("Coordinates of HD 1 [deg]: %010.6f  %+09.6f" % (ra, dec))
-
-# # Convert back into sexagesimal representation
-# sexa = pyasl.coordsDegToSexa(ra, dec)
-# print("Coordinates of HD 1 [sexa]: ", sexa)
-
+import time
 
 # Sets the directory to the current directory
 os.chdir(sys.path[0])
@@ -42,8 +29,7 @@ random_state = 27
 
 plt.style.use('seaborn')
 
-# ObjID_s_gs_gsu
-
+# Load the fits-file
 fitscat = Table.read('GaiaSDSSUKIDSSAllWISE.fits','fits').to_pandas()
 rawname = np.array(fitscat['Name_u_gsu'].to_numpy(), dtype=str)
 
@@ -52,16 +38,18 @@ objid = fitscat['ObjID_s_gs_gsu'].to_numpy()
 ra = fitscat['Ra_g_gs_gsu'].to_numpy()
 dec = fitscat['Dec_g_gs_gsu'].to_numpy()
 
-
+# Get the object spectral IDs if it is there
 specid = fitscat['SpObjID_s_gs_gsu'].to_numpy()
 urls = np.array(specid, dtype=object)
 for n,s in enumerate(specid):
     if s != 0:
+        # Save as url to scrape the subcategories
         urls[n] = f'http://skyserver.sdss.org/dr12/en/get/SpecById.ashx?id={s}'
     else:
         urls[n] = ''
 
 
+# Load the ascii file
 with open("MasterList", "r") as masterfile:
     # Exclude comment col
     additional = {
@@ -81,29 +69,30 @@ with open("MasterList", "r") as masterfile:
 
 masterframe = pd.DataFrame.from_dict(additional)
 masternames = masterframe['NTT_study'].to_numpy(dtype=str)
-print(masterframe)
 
+# Because there's no spectral IDs, use the coordinates to search on SDSS
 ra = masterframe['RA'].to_numpy()
 dec = masterframe['Dec'].to_numpy()
-
-print(ra[0])
-
 extra_specid = list()
 
 for r, d in tqdm(zip(ra, dec)):
     co = coords.SkyCoord(r,d, unit=(u.hourangle, u.deg))
+    # Perform the search
     result = SDSS.query_region(co, data_release=12, spectro=True)
     if result == None:
         extra_specid.append('')
     else:
+        # Save the id, if it is there
         extra_specid.append(result['specobjid'][-1])
 
+# Similar to what was done for the fits file objects
 masterurls = np.array(extra_specid, dtype=object)
 for n,s in enumerate(extra_specid):
     if s != '':
         masterurls[n] = f'http://skyserver.sdss.org/dr12/en/get/SpecById.ashx?id={s}'
     else:
         masterurls[n] = ''
+
 
 
 def addclass(clname):
@@ -120,15 +109,10 @@ def addclass(clname):
     allspecids = np.ones_like(extra_specid)
 
     alldata = pd.read_csv(example)
-
     class_list = np.ones_like(alldata['Name'].to_numpy())
-
     id_list = np.ones_like(alldata['Name'].to_numpy())
-
     z_list = np.ones_like(alldata['Name'].to_numpy())
-
     av_list = np.ones_like(alldata['Name'].to_numpy())
-
     specid_list = np.ones_like(alldata['Name'].to_numpy())
 
     for i, n in tqdm(enumerate(alldata['Name'].to_numpy(dtype=str))):
@@ -136,14 +120,16 @@ def addclass(clname):
         wanted_id = objid[np.where(rawname == n)]
         wanted_z = allzs[np.where(masternames == n)]
         wanted_av = allavs[np.where(masternames == n)]
+
         if n in rawname:
             wanted_spec = urls[np.where(rawname == n)][0]
+
         if n in masternames:
             wanted_spec = masterurls[np.where(masternames == n)][0]
-            #print(wanted_spec)
 
+        # If the object has a spectral ID, scrape SDSS to find the plot of the spectrum
         if wanted_spec != '':
-            #wanted_spec = wanted_spec[0]
+            time.sleep(0.1)
             buffer = tempfile.SpooledTemporaryFile(max_size=1e9)
             try:
                 r = requests.get(wanted_spec, stream=True)
@@ -161,7 +147,7 @@ def addclass(clname):
                 im = Image.open(io.BytesIO(buffer.read()))
                 im = np.asarray(im)
             buffer.close()
-
+            # Find the subcategory on the spectrum figure
             text = image_to_string(im, lang="eng").lower()
             text = text[text.find("class=")+6:].split("\n")[0]
             if '0' in text:
@@ -169,9 +155,10 @@ def addclass(clname):
             specid_list[i] = text
         else:
             specid_list[i] = ''
-        #wanted_class = allclass['Label'].loc[allclass['Name'] == n]
-        class_list[i] = wanted_class[0]
-        
+        try:
+            class_list[i] = wanted_class[0]
+        except:
+            class_list[i] = wanted_class
         try:
             id_list[i] = wanted_id[0]
         except:
@@ -184,6 +171,7 @@ def addclass(clname):
             av_list[i] = wanted_av[0]
         except:
             av_list[i] = wanted_av
+    # Save all the data found in SDSS and MasterList
     alldata['Label'] = class_list
     alldata['ID'] = id_list
     alldata['z'] = z_list
@@ -191,17 +179,12 @@ def addclass(clname):
     alldata['Subclass'] = specid_list
 
     example = example.split('.')[0]
-
     alldata.to_csv(f'{example}_labels.csv')
 
-for cl in glob('G18/*.csv'):
-    print(cl)
-    addclass(cl)
+# Example use, folder can't be found on github
 
-for cl in glob('G20/*.csv'):
-    print(cl)
-    addclass(cl)
+list19 = list(glob('G19/final/*.csv'))
 
-for cl in glob('G19/*p50_G19.csv'):
+for cl in list19:
     print(cl)
     addclass(cl)
